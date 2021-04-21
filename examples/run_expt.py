@@ -69,6 +69,7 @@ def main():
     parser.add_argument('--irm_lambda', type=float)
     parser.add_argument('--irm_penalty_anneal_iters', type=int)
     parser.add_argument('--algo_log_metric')
+    parser.add_argument('--rd_type', type=int)
 
     # Model selection
     parser.add_argument('--val_metric')
@@ -113,7 +114,7 @@ def main():
     config = populate_defaults(config)
 
     # set device
-    config.device = torch.device("cuda:" + str(config.device)) if torch.cuda.is_available() else torch.device("cpu")
+    config.device = torch.device("cuda")
 
     ## Initialize logs
     if os.path.exists(config.log_dir) and config.resume:

@@ -3,6 +3,7 @@ from algorithms.ERM import ERM
 from algorithms.groupDRO import GroupDRO
 from algorithms.deepCORAL import DeepCORAL
 from algorithms.IRM import IRM
+from algorithms.single_model_multi_gradient import MultiGradient
 from configs.supported import algo_log_metrics, losses
 
 def initialize_algorithm(config, datasets, train_grouper):
@@ -32,6 +33,14 @@ def initialize_algorithm(config, datasets, train_grouper):
 
     if config.algorithm=='ERM':
         algorithm = ERM(
+            config=config,
+            d_out=d_out,
+            grouper=train_grouper,
+            loss=loss,
+            metric=metric,
+            n_train_steps=n_train_steps)
+    elif config.algorithm=='RD':
+        algorithm = MultiGradient(
             config=config,
             d_out=d_out,
             grouper=train_grouper,

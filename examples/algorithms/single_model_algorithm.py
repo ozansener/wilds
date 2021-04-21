@@ -51,7 +51,6 @@ class SingleModelAlgorithm(GroupAlgorithm):
         y_true = y_true.to(self.device)
         g = self.grouper.metadata_to_group(metadata).to(self.device)
         outputs = self.model(x)
-
         results = {
             'g': g,
             'y_true': y_true,

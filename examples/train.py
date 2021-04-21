@@ -78,6 +78,10 @@ def train(algorithm, datasets, general_logger, config, epoch_offset, best_val_me
     for epoch in range(epoch_offset, config.n_epochs):
         general_logger.write('\nEpoch [%d]:\n' % epoch)
 
+        # Set RD Schedule
+        if config.rd_type > 0:
+            algorithm.update_beta(epoch, config.n_epochs)
+
         # First run training
         run_epoch(algorithm, datasets['train'], general_logger, epoch, config, train=True)
 
