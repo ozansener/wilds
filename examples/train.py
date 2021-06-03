@@ -1,4 +1,5 @@
 import os
+import time
 from tqdm import tqdm
 import torch
 from utils import save_model, save_pred, get_pred_prefix, get_model_prefix
@@ -28,7 +29,10 @@ def run_epoch(algorithm, dataset, general_logger, epoch, config, train):
 
     for batch in iterator:
         if train:
+            start = time.time()
             batch_results = algorithm.update(batch)
+            end = time.time()
+            print('Vatch', end - start)
         else:
             batch_results = algorithm.evaluate(batch)
 
@@ -79,9 +83,11 @@ def train(algorithm, datasets, general_logger, config, epoch_offset, best_val_me
         general_logger.write('\nEpoch [%d]:\n' % epoch)
 
         # Set RD Schedule
-        if config.rd_type > 0:
+        if config.algorithm == 'RD':
             algorithm.update_beta(epoch, config.n_epochs)
-
+            if epoch > config.warm_start_epoch:
+                algorithm.warm_started = True
+            print("Warm Started: {}".format(algorithm.warm_started))
         # First run training
         run_epoch(algorithm, datasets['train'], general_logger, epoch, config, train=True)
 

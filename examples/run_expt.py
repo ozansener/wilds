@@ -70,6 +70,10 @@ def main():
     parser.add_argument('--irm_penalty_anneal_iters', type=int)
     parser.add_argument('--algo_log_metric')
     parser.add_argument('--rd_type', type=int)
+    parser.add_argument('--warm_start_epoch', type=int)
+    parser.add_argument('--control_only_direction', type=parse_bool, const=False, nargs='?')
+    parser.add_argument('--only_inconsistent', type=parse_bool, const=True, nargs='?')
+    parser.add_argument('--without_sampling', type=parse_bool, const=False, nargs='?')
 
     # Model selection
     parser.add_argument('--val_metric')
@@ -203,9 +207,9 @@ def main():
 
         # Loggers
         datasets[split]['eval_logger'] = BatchLogger(
-            os.path.join(config.log_dir, f'{split}_eval.csv'), mode=mode, use_wandb=(config.use_wandb and verbose))
+            os.path.join(config.log_dir, '{}_eval.csv'.format(split)), mode=mode, use_wandb=(config.use_wandb and verbose))
         datasets[split]['algo_logger'] = BatchLogger(
-            os.path.join(config.log_dir, f'{split}_algo.csv'), mode=mode, use_wandb=(config.use_wandb and verbose))
+            os.path.join(config.log_dir, '{}_algo.csv'.format(split)), mode=mode, use_wandb=(config.use_wandb and verbose))
 
         if config.use_wandb:
             initialize_wandb(config)
@@ -240,11 +244,11 @@ def main():
                     for file in os.listdir(config.log_dir) if file.endswith('.pth')]
                 if len(epochs) > 0:
                     latest_epoch = max(epochs)
-                    save_path = model_prefix + f'epoch:{latest_epoch}_model.pth'
+                    save_path = model_prefix + 'epoch:{}_model.pth'.format(latest_epoch)
             try:
                 prev_epoch, best_val_metric = load(algorithm, save_path)
                 epoch_offset = prev_epoch + 1
-                logger.write(f'Resuming from epoch {epoch_offset} with best val metric {best_val_metric}')
+                logger.write('Resuming from epoch {} with best val metric {}'.format(epoch_offset, best_val_metric))
                 resume_success = True
             except FileNotFoundError:
                 pass
@@ -264,7 +268,7 @@ def main():
         if config.eval_epoch is None:
             eval_model_path = model_prefix + 'epoch:best_model.pth'
         else:
-            eval_model_path = model_prefix +  f'epoch:{config.eval_epoch}_model.pth'
+            eval_model_path = model_prefix +  'epoch:{}_model.pth'.format(config.eval_epoch)
         best_epoch, best_val_metric = load(algorithm, eval_model_path)
         if config.eval_epoch is None:
             epoch = best_epoch

@@ -14,6 +14,15 @@ class BlahutArimoto:
         self.iter_count = None
         self.marginals = []
 
+    def initialize_conditionals_only(self, grad_shapes):
+        for env in self.envs:
+            for i, p_shape in enumerate(grad_shapes):
+                self.conditionals_pos[env][i].fill_(0.5)
+                
+    def initialize_marginals_only(self, grad_shapes):
+        for i in range(len(self.marginals)):
+            self.marginals[i].fill_(0.5)
+
     def initialize_uniform(self, grad_shapes):
         for env in self.envs:
             if env in self.conditionals_pos:
@@ -25,7 +34,7 @@ class BlahutArimoto:
                     self.conditionals_pos[env].append(0.5*torch.ones(p_shape).to(self.device))
         if len(self.marginals)>0:
             for i in range(len(self.marginals)):
-                self.marginals[i].fill_(0)
+                self.marginals[i].fill_(0.5)
         else:
             for p_shape in grad_shapes:
                 self.marginals.append(torch.zeros(p_shape).to(self.device))
@@ -55,25 +64,33 @@ class BlahutArimoto:
         for _ in range(num_iterations):
             if compute_cost:
                 self.compute_cost()
-            self.compute_marginals()
             self.compute_conditionals(dist_pos_all, dist_neg_all)
+            self.compute_marginals()
         return self.marginals, self.costs
 
+    def optimize_rd_from_scratch(self, dist_pos_all, dist_neg_all, sizes):
+        self.envs = list(dist_pos_all.keys())
+        self.num_envs = len(self.envs)
+        
+        self.initialize_uniform(sizes)
+        self.compute_marginals()
+        self.run_algorithm(dist_pos_all, dist_neg_all, compute_cost=False, num_iterations=100)
+    
     def optimize_rd(self, dist_pos_all, dist_neg_all, sizes):
         self.envs = list(dist_pos_all.keys())
         self.num_envs = len(self.envs)
 
-        self.iter_count = None
-
         if self.iter_count is None:
-            _num_iterations = 100
+            _num_iterations = 200
             self.iter_count = 0
             self.initialize_uniform(sizes)
-        elif self.iter_count % 1000 == 999:
-            _num_iterations = 100
+            self.compute_marginals()
+        elif self.iter_count % 500 == 499:
+            _num_iterations = 50
             self.iter_count += 1
             self.initialize_uniform(sizes)
+            self.compute_marginals()
         else:
-            _num_iterations = 10
+            _num_iterations = 50
             self.iter_count += 1
         return self.run_algorithm(dist_pos_all, dist_neg_all, compute_cost=False, num_iterations=_num_iterations)

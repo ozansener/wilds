@@ -5,9 +5,11 @@ algorithm_defaults = {
         'eval_loader': 'standard',
     },
     'RD': {
-        'train_loader': 'standard',
-        'uniform_over_groups': False,
+        'train_loader': 'group',
+        'uniform_over_groups': True,
+        'distinct_groups': True,
         'eval_loader': 'standard',
+        'warm_start_epoch': -1,
     }, 
     'groupDRO': {
         'train_loader': 'standard',

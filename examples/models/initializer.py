@@ -7,6 +7,7 @@ from models.layers import Identity
 from models.gnn import GINVirtual
 from models.code_gpt import GPT2LMHeadLogit, GPT2FeaturizerLMHeadLogit
 from transformers import GPT2Tokenizer
+from models.networks import BNFreeResNet50, BNFreeDenseNet
 
 def initialize_model(config, d_out, is_featurizer=False):
     """
@@ -23,7 +24,17 @@ def initialize_model(config, d_out, is_featurizer=False):
             If is_featurizer=False:
             - model: a model that is equivalent to nn.Sequential(featurizer, classifier)
     """
-    if config.model in ('resnet50', 'resnet34', 'wideresnet50', 'densenet121'):
+    if config.model in ('resnet50'):
+        if is_featurizer:
+            raise ValueError('Nop')
+        else:
+            model = initialize_bn_free_resnet_model(name=config.model, d_out=d_out, **config.model_kwargs)
+    elif config.model in ('deenet121AA'):
+        if is_featurizer:
+            raise ValueError('Nop')
+        else:
+            model = initialize_bn_free_densenet_model(name=config.model, d_out=d_out, **config.model_kwargs)
+    elif config.model in ('densenet121', 'resnet34', 'wideresnet50'):
         if is_featurizer:
             featurizer = initialize_torchvision_model(
                 name=config.model,
@@ -122,4 +133,31 @@ def initialize_torchvision_model(name, d_out, **kwargs):
         last_layer = nn.Linear(d_features, d_out)
         model.d_out = d_out
     setattr(model, last_layer_name, last_layer)
+    return model
+
+def initialize_bn_free_resnet_model(name, d_out, **kwargs):
+    if name == 'resnet50':
+        model = BNFreeResNet50(**kwargs)
+    else:
+        raise ValueError("Unsupported Model")
+    if d_out is not None:
+        d_features = getattr(model.network, 'fc').in_features
+        print("DIn:{} DOut: {}".format(d_features, d_out))
+        last_layer = nn.Linear(d_features, d_out)
+        model.network.d_out = d_out
+    setattr(model.network, 'fc', last_layer)
+    return model
+
+
+def initialize_bn_free_densenet_model(name, d_out, **kwargs):
+    if name == 'densenet121':
+        model = BNFreeDenseNet(**kwargs)
+    else:
+        raise ValueError("Unsupported Model")
+    if d_out is not None:
+        d_features = getattr(model.network, 'classifier').in_features
+        print("DIn:{} DOut: {}".format(d_features, d_out))
+        last_layer = nn.Linear(d_features, d_out)
+        model.network.d_out = d_out
+    setattr(model.network, 'classifier', last_layer)
     return model
